@@ -16,28 +16,36 @@ import com.rasmoo.cliente.escola.gradecurricular.exception.MateriaException;
 import com.rasmoo.cliente.escola.gradecurricular.repository.IMateriaRepository;
 
 @Service
-public class materiaService implements IMateriaService {
+public class MateriaService implements IMateriaService {
 
 	@Autowired
+	private static final String MENSAGEM_ERRO = "Erro interno identificado.";
+	private static final String MATERIA_NAO_ENCONTRADA = "Matéria não encontrada";
 	private IMateriaRepository materiaRepository;
+	private ModelMapper mapper;
+
+	@Autowired
+	public MateriaService(IMateriaRepository materiaRepository) {
+		this.mapper = new ModelMapper();
+		this.materiaRepository = materiaRepository;
+
+	}
 
 	@Override
 	public Boolean atualizar(MateriaDto materia) {
 		try {
-			Optional<MateriaEntity> materiaOptional = this.materiaRepository.findById(materia.getId());
+			this.consultar(materia.getId());
 
-			if (materiaOptional.isPresent()) {
-				ModelMapper mapper = new ModelMapper();
-				MateriaEntity materiaEntityAtualizada = mapper.map(materia, MateriaEntity.class);
+			MateriaEntity materiaEntityAtualizada = this.mapper.map(materia, MateriaEntity.class);
 
-				this.materiaRepository.save(materiaEntityAtualizada);
+			this.materiaRepository.save(materiaEntityAtualizada);
 
-				return true;
-			}
-			return false;
+			return Boolean.TRUE;
 
+		} catch (MateriaException m) {
+			throw m;
 		} catch (Exception e) {
-			return false;
+			throw e;
 		}
 	}
 
@@ -46,7 +54,7 @@ public class materiaService implements IMateriaService {
 		try {
 			this.consultar(id);
 			this.materiaRepository.deleteById(id);
-			return true;
+			return Boolean.TRUE;
 
 		} catch (MateriaException m) {
 			throw m;
@@ -59,13 +67,13 @@ public class materiaService implements IMateriaService {
 	@Override
 	public Boolean cadastrar(MateriaDto materia) {
 		try {
-			ModelMapper mapper = new ModelMapper();
-			MateriaEntity materiaEntity = mapper.map(materia, MateriaEntity.class);
+			
+			MateriaEntity materiaEntity = this.mapper.map(materia, MateriaEntity.class);
 			this.materiaRepository.save(materiaEntity);
-			return true;
+			return Boolean.TRUE;
 		} catch (Exception e) {
 
-			return false;
+			throw new MateriaException(MENSAGEM_ERRO, HttpStatus.INTERNAL_SERVER_ERROR);
 
 		}
 	}
@@ -73,33 +81,33 @@ public class materiaService implements IMateriaService {
 	@Override
 	public List<MateriaDto> listar() {
 		try {
-			ModelMapper mapper = new ModelMapper();
 			
-			return mapper.map(this.materiaRepository.findAll(), new TypeToken<List<MateriaDto>>() {}.getType());
+
+			return this.mapper.map(this.materiaRepository.findAll(), new TypeToken<List<MateriaDto>>() {
+			}.getType());
 
 		} catch (Exception e) {
-			return new ArrayList<>();
+			throw new MateriaException(MENSAGEM_ERRO, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
 	@Override
 	public MateriaDto consultar(Long id) {
 		try {
-			ModelMapper mapper = new ModelMapper();
-			
+
 			Optional<MateriaEntity> materiaOptional = this.materiaRepository.findById(id);
 			if (materiaOptional.isPresent()) {
 
-				return mapper.map(materiaOptional.get(), MateriaDto.class);
+				return this.mapper.map(materiaOptional.get(), MateriaDto.class);
 
 			}
-			throw new MateriaException("Matéria não encontrada", HttpStatus.NOT_FOUND);
+			throw new MateriaException(MATERIA_NAO_ENCONTRADA, HttpStatus.NOT_FOUND);
 
 		} catch (MateriaException m) {
 			throw m;
 
 		} catch (Exception e) {
-			throw new MateriaException("Erro interno identificado.", HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new MateriaException(MENSAGEM_ERRO, HttpStatus.INTERNAL_SERVER_ERROR);
 
 		}
 
