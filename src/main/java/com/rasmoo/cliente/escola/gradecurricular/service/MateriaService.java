@@ -7,6 +7,11 @@ import java.util.Optional;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +20,7 @@ import com.rasmoo.cliente.escola.gradecurricular.entity.MateriaEntity;
 import com.rasmoo.cliente.escola.gradecurricular.exception.MateriaException;
 import com.rasmoo.cliente.escola.gradecurricular.repository.IMateriaRepository;
 
+@CacheConfig(cacheNames = "materia")
 @Service
 public class MateriaService implements IMateriaService {
 
@@ -30,7 +36,11 @@ public class MateriaService implements IMateriaService {
 		this.materiaRepository = materiaRepository;
 
 	}
-
+	
+	/*para várias caches
+	 * @Caching(evict = {
+			
+	})*/
 	@Override
 	public Boolean atualizar(MateriaDto materia) {
 		try {
@@ -63,7 +73,8 @@ public class MateriaService implements IMateriaService {
 			throw e;
 		}
 	}
-
+	
+	
 	@Override
 	public Boolean cadastrar(MateriaDto materia) {
 		try {
@@ -77,7 +88,8 @@ public class MateriaService implements IMateriaService {
 
 		}
 	}
-
+	
+	@CachePut(unless = "#result.size()<3")
 	@Override
 	public List<MateriaDto> listar() {
 		try {
@@ -92,6 +104,7 @@ public class MateriaService implements IMateriaService {
 	}
 
 	@Override
+	@Cacheable (key = "#id")
 	public MateriaDto consultar(Long id) {
 		try {
 
