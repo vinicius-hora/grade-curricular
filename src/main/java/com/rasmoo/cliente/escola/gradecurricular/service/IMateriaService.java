@@ -17,5 +17,7 @@ public interface IMateriaService {
 	
 	public MateriaDto consultar (final Long id);
 
+	public List<MateriaDto> consultaPorHora(int horaMinima);
+
 
 }

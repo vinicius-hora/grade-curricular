@@ -12,9 +12,11 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.rasmoo.cliente.escola.gradecurricular.controller.MateriaController;
 import com.rasmoo.cliente.escola.gradecurricular.dto.MateriaDto;
 import com.rasmoo.cliente.escola.gradecurricular.entity.MateriaEntity;
 import com.rasmoo.cliente.escola.gradecurricular.exception.MateriaException;
@@ -36,11 +38,14 @@ public class MateriaService implements IMateriaService {
 		this.materiaRepository = materiaRepository;
 
 	}
-	
-	/*para várias caches
+
+	/*
+	 * para várias caches
+	 * 
 	 * @Caching(evict = {
-			
-	})*/
+	 * 
+	 * })
+	 */
 	@Override
 	public Boolean atualizar(MateriaDto materia) {
 		try {
@@ -73,12 +78,11 @@ public class MateriaService implements IMateriaService {
 			throw e;
 		}
 	}
-	
-	
+
 	@Override
 	public Boolean cadastrar(MateriaDto materia) {
 		try {
-			
+
 			MateriaEntity materiaEntity = this.mapper.map(materia, MateriaEntity.class);
 			this.materiaRepository.save(materiaEntity);
 			return Boolean.TRUE;
@@ -88,23 +92,32 @@ public class MateriaService implements IMateriaService {
 
 		}
 	}
-	
+
 	@CachePut(unless = "#result.size()<3")
 	@Override
 	public List<MateriaDto> listar() {
 		try {
-			
 
-			return this.mapper.map(this.materiaRepository.findAll(), new TypeToken<List<MateriaDto>>() {
-			}.getType());
+			List<MateriaDto> materiaDto = this.mapper.map(this.materiaRepository.findAll(),
+					new TypeToken<List<MateriaDto>>() {
+					}.getType());
+			materiaDto.forEach(materia -> {
+				materia.add(WebMvcLinkBuilder
+						.linkTo(WebMvcLinkBuilder.methodOn(MateriaController.class).consultaMateria(materia.getId()))
+						.withSelfRel());
+			});
+
+			return materiaDto;
 
 		} catch (Exception e) {
 			throw new MateriaException(MENSAGEM_ERRO, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
+	
+	
 
 	@Override
-	@Cacheable (key = "#id")
+	@Cacheable(key = "#id")
 	public MateriaDto consultar(Long id) {
 		try {
 
@@ -125,5 +138,24 @@ public class MateriaService implements IMateriaService {
 		}
 
 	}
+	
+	@Override
+	public List<MateriaDto> consultaPorHora(int horaMinima) {
+			return this.mapper.map(this.materiaRepository.findByHoraMinima(horaMinima),
+					new TypeToken<List<MateriaDto>>() {
+					}.getType());
+			
+			}
+
+	
+
+	
+
+	
+	
+	
+
+	
+	
 
 }
