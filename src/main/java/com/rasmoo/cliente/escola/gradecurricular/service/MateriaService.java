@@ -16,6 +16,7 @@ import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.rasmoo.cliente.escola.gradecurricular.constante.Mensagens;
 import com.rasmoo.cliente.escola.gradecurricular.controller.MateriaController;
 import com.rasmoo.cliente.escola.gradecurricular.dto.MateriaDto;
 import com.rasmoo.cliente.escola.gradecurricular.entity.MateriaEntity;
@@ -27,7 +28,7 @@ import com.rasmoo.cliente.escola.gradecurricular.repository.IMateriaRepository;
 public class MateriaService implements IMateriaService {
 
 	@Autowired
-	private static final String MENSAGEM_ERRO = "Erro interno identificado.";
+	private static final String MENSAGEM_ERRO = "Erro interno identificado";
 	private static final String MATERIA_NAO_ENCONTRADA = "Matéria não encontrada";
 	private IMateriaRepository materiaRepository;
 	private ModelMapper mapper;
@@ -60,7 +61,7 @@ public class MateriaService implements IMateriaService {
 		} catch (MateriaException m) {
 			throw m;
 		} catch (Exception e) {
-			throw e;
+			throw new MateriaException(MENSAGEM_ERRO, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -75,21 +76,25 @@ public class MateriaService implements IMateriaService {
 			throw m;
 
 		} catch (Exception e) {
-			throw e;
+			throw new MateriaException(MENSAGEM_ERRO, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
 	@Override
 	public Boolean cadastrar(MateriaDto materia) {
 		try {
-
-			MateriaEntity materiaEntity = this.mapper.map(materia, MateriaEntity.class);
-			this.materiaRepository.save(materiaEntity);
-			return Boolean.TRUE;
+			if(materia.getId() != null) {
+				throw new MateriaException(Mensagens.ERRO_ID_INFORMADO.getValor(),
+						HttpStatus.BAD_REQUEST);
+			}
+			
+			return this.cadastrar(materia);
+			
+					
+		} catch (MateriaException m) {
+			throw m;
 		} catch (Exception e) {
-
-			throw new MateriaException(MENSAGEM_ERRO, HttpStatus.INTERNAL_SERVER_ERROR);
-
+			throw new MateriaException(Mensagens.ERRO_GENERICO.getValor(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
@@ -141,9 +146,15 @@ public class MateriaService implements IMateriaService {
 	
 	@Override
 	public List<MateriaDto> consultaPorHora(int horaMinima) {
+		try {
 			return this.mapper.map(this.materiaRepository.findByHoraMinima(horaMinima),
 					new TypeToken<List<MateriaDto>>() {
 					}.getType());
+			
+		}catch (Exception e) {
+			throw new MateriaException(MENSAGEM_ERRO, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+			
 			
 			}
 
